@@ -1,0 +1,1255 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Simulateur Management package</title>
+  <script src="https://cdn.jsdelivr.net/npm/hyperformula@2.6.0/dist/hyperformula.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+  <style>
+    :root {
+      --bg-page: #F3F4F6;
+      --bg-card: #FFFFFF;
+      --border-color: #E5E7EB;
+      --text-primary: #1A1A1A;
+      --text-secondary: #6B7280;
+      --accent-primary: #2563EB;
+      --accent-primary-dark: #1D4ED8;
+      --accent-secondary: #059669;
+      --note-bg: #E0F2FE;
+      --note-border: #7DD3FC;
+      --note-text: #0C4A6E;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      margin: 0;
+      background: var(--bg-page);
+      color: var(--text-primary);
+    }
+    .topbar {
+        background-color: var(--bg-card);
+        padding: 8px 24px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+    }
+    .topbar h1 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      box-shadow: 0 6px 16px rgba(0,0,0,.06);
+      padding: 24px;
+    }
+    .hero { text-align: center; }
+    .hero__icon { font-size: 32px; color: var(--accent-primary); margin-bottom: 8px; }
+    .hero__title { font-size: 24px; font-weight: 700; margin: 0; }
+    .hero__subtitle { font-size: 16px; color: var(--text-secondary); margin: 4px 0 16px 0; }
+    .hero__note { background: var(--note-bg); border: 1px solid var(--note-border); color: var(--note-text); border-radius: 8px; padding: 12px; font-size: 14px; text-align: left; }
+
+    .hypotheses-card { 
+      background: var(--note-bg) !important; 
+      border: 2px solid var(--accent-primary) !important; 
+      color: var(--note-text) !important; 
+    }
+    .hypotheses-card h2 { 
+      color: var(--accent-primary) !important; 
+    }
+
+    .bloc h2 {
+        font-size: 18px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 20px 0;
+        color: var(--accent-primary);
+    }
+    
+    .formgrid--2col { display:grid; grid-template-columns: 260px 1fr; gap:16px 24px; align-items: center; }
+    .chips { display: flex; gap: 8px; }
+    .chip { padding: 8px 16px; border: 1px solid var(--border-color); background: transparent; border-radius: 20px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+    .chip:hover { background-color: #F3F4F6; }
+    .chip.chip--selected { background-color: var(--note-bg); border-color: var(--note-border); color: var(--accent-primary); font-weight: 600; }
+    
+    .checks-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:18px; }
+    .check { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+    .check input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent-primary); }
+
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table .thead { background: linear-gradient(90deg, #1e6bb8, #2a90d9); color: #fff; border-radius: 8px 8px 0 0; }
+    .table .thead .tr, .table .tbody .tr { display: grid; grid-template-columns: 28% repeat(5, 1fr); }
+    .table .th, .table .td { padding: 12px; text-align: left; }
+    .table .th { font-weight: 600; text-align: center; }
+    .table .td { border-bottom: 1px solid var(--border-color); display: flex; align-items: center; }
+    .table .td--stub { font-weight: 500; color: var(--text-secondary); background-color: #F8F9FA; border-left: 1px solid var(--border-color); }
+    .table .tr:last-child .td { border-bottom: none; }
+    .table .td:last-child { border-right: 1px solid var(--border-color); }
+
+    .kpi-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:20px; margin-bottom: 24px; }
+    .kpi { display: flex; align-items: center; gap: 12px; }
+    .kpi i { font-size: 20px; color: var(--accent-primary); width: 24px; text-align: center; }
+    .kpi__label { font-size: 14px; color: var(--text-secondary); }
+    .kpi__value { font-size: 20px; font-weight: 700; margin-left: auto; }
+
+    .actions { display:flex; gap:12px; margin: 24px 0; }
+    .btn { padding: 10px 20px; font-size: 15px; font-weight: 600; border-radius: 8px; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn--primary { background-color: var(--accent-primary); color: white; }
+    .btn--primary:hover { background-color: var(--accent-primary-dark); }
+    .btn--ghost { background-color: transparent; border-color: var(--border-color); color: var(--text-secondary); }
+    .btn--ghost:hover { background-color: var(--bg-page); border-color: #BDBDBD; }
+    .btn--save { background-color: var(--accent-secondary); color: white; }
+    .btn--save:hover { background-color: #047857; }
+
+    .disclaimer { font-size: 12px; color: var(--text-secondary); }
+
+    input, select {
+      padding: 10px 12px; background: var(--bg-card); border: 1px solid #CED4DA;
+      color: var(--text-primary); border-radius: 6px; font-size: 15px; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s; width: 100%; box-sizing: border-box;
+    }
+    input:focus, select:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+    input[type="number"] { text-align: right; }
+
+    .calculated-val {
+        padding: 10px 12px; background-color: #E9ECEF; border-radius: 6px;
+        font-size: 15px; font-family: monospace; color: var(--text-secondary);
+        text-align: right; min-height: 21px; white-space: nowrap; width: 100%; box-sizing: border-box;
+    }
+    
+    .chart-container {
+        position: relative;
+        max-width: 400px;
+        margin: 24px auto;
+    }
+
+    @media (max-width: 1023px) {
+      .checks-grid { grid-template-columns: repeat(2,1fr); }
+      .kpi-grid { grid-template-columns: 1fr; }
+      .table-container { overflow-x: auto; }
+    }
+    @media (max-width: 767px) {
+      .page { padding: 16px; }
+      .formgrid--2col { grid-template-columns: 1fr; gap: 12px; }
+      .checks-grid { grid-template-columns: 1fr; }
+      .actions { flex-direction: column; }
+    }
+  </style>
+
+<style id="one-shot-visual-patch">
+*, *::before, *::after { box-sizing: border-box; }
+html, body { max-width: 100%; overflow-x: hidden; }
+.chips { flex-wrap: wrap; }
+.table .thead .tr, .table .tbody .tr { grid-template-columns: 28% repeat(5, minmax(0,1fr)); }
+.table .th, .table .td { min-width: 0; }
+input, select, textarea, .calculated-val { max-width: 100%; min-width: 0; }
+.table .td, .table .th { word-break: break-word; overflow-wrap: anywhere; white-space: normal; }
+.bloc.card, .bloc, section, main, .page { overflow-x: auto; max-width: 100%; }
+.container, .page { max-width: 100%; }
+</style>
+
+<style id="task-specific-patch">
+.card + .card { margin-top: 16px; }
+.check { align-items: flex-start; }
+.check input[type="checkbox"] { width: 18px; height: 18px; flex: 0 0 18px; margin-top: 2px; }
+.table .tr.tr--subsection { display: grid; grid-template-columns: 1fr !important; }
+.table .td.td--subsection {
+  background: #F1F5F9;
+  border: 1px solid var(--border-color);
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+</style>
+
+<style>
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #results-card, #results-card * {
+    visibility: visible;
+  }
+  #results-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  #results-card .actions {
+    display: none;
+  }
+}
+</style>
+
+<style id="responsive-v2-2025-09-03">
+html, body { max-width: 100%; overflow-x: auto !important; }
+*, *::before, *::after { box-sizing: border-box; min-width: 0; }
+img, canvas, svg, video { max-width: 100%; height: auto; display: block; }
+
+.page { width: 100%; max-width: 100%; padding: clamp(12px, 3vw, 24px); }
+.card { padding: clamp(16px, 2.5vw, 24px); }
+
+.topbar { flex-wrap: wrap; row-gap: 6px; }
+.actions { flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .actions > * { flex: 1 1 100%; }
+}
+
+.formgrid--2col { grid-template-columns: 1fr 1fr; gap: 16px 16px; }
+@media (max-width: 1024px) {
+  .formgrid--2col { grid-template-columns: 1fr; gap: 12px; }
+}
+
+.chips { flex-wrap: wrap; row-gap: 8px; }
+
+.table-container, .table { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table .thead .tr, .table .tbody .tr {
+  display: grid;
+  grid-template-columns: minmax(180px, 28%) repeat(5, minmax(120px, 1fr));
+  column-gap: 0;
+}
+.table .th, .table .td { min-width: 0; }
+.table .td, .table .th { word-break: break-word; overflow-wrap: anywhere; white-space: normal; }
+
+@media (max-width: 900px) {
+  .table .thead .tr, .table .tbody .tr {
+    grid-template-columns: minmax(200px, 35%) repeat(5, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .table .thead .tr, .table .tbody .tr {
+    grid-template-columns: minmax(220px, 45%) repeat(5, minmax(120px, 1fr));
+  }
+  .page { padding: 12px; }
+}
+
+[style*="width:"]:not(canvas):not(progress):not(input):not(select):not(textarea) { max-width: 100% !important; }
+</style>
+
+
+<style id="sticky-headers-patch-2025-09-03">
+.table {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-y;
+}
+
+.table .thead {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.04);
+}
+
+.table .th--stub,
+.table .td--stub {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  background: #F8F9FA;
+  border-right: 1px solid var(--border-color);
+}
+
+.table .thead .th--stub {
+  z-index: 6;
+  background: linear-gradient(90deg, #1e6bb8, #2a90d9);
+  color: #fff;
+  border-right: none;
+}
+
+.table .th, .table .td {
+  min-width: 0;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.table .thead .tr,
+.table .tbody .tr {
+  will-change: transform;
+}
+
+.table .thead { border-radius: 8px 8px 0 0; }
+</style>
+
+
+<style id="header-visibility-fix-2025-09-03">
+.table { position: relative; }
+.table .thead { background: transparent !important; position: sticky; top: 0; z-index: 7; }
+.table .thead .tr { width: max-content; }
+.table .thead .th {
+  background: linear-gradient(90deg, #1e6bb8, #2a90d9);
+  color: #fff;
+}
+.table .thead .th + .th { border-left: 1px solid rgba(255,255,255,.15); }
+.table .thead .th:first-child { border-radius: 8px 0 0 0; }
+.table .thead .th:last-child  { border-radius: 0 8px 0 0; }
+
+.table .thead .th--stub { z-index: 8; }
+</style>
+
+
+<style id="touch-scroll-patch-2025-09-03">
+html, body { overflow-x: hidden !important; }
+
+.table {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+}
+
+.table input, .table select, .table textarea, .table .calculated-val {
+  touch-action: pan-x pan-y;
+}
+
+@media (max-width: 900px) {
+  .table .thead .tr, .table .tbody .tr {
+    grid-template-columns: minmax(220px, 42%) repeat(5, minmax(150px, 1fr));
+  }
+}
+</style>
+
+
+<style id="mpatch-2025-09-03">
+.table .col-disabled { opacity: .45; filter: grayscale(.2); }
+.table .col-disabled input, .table .col-disabled select, .table .col-disabled textarea { pointer-events: none; }
+@media print { img.print-visible { display:inline-block !important; } }
+</style>
+
+
+<style id="table-align-fix-2025-09-04">
+:root{
+  --stubW-desktop: 28%;
+  --stubW-tablet: 35%;
+  --stubW-mobile: 44%;
+  --colMin: 140px;
+}
+.table-container, .table{
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+}
+.table .thead .tr,
+.table .tbody .tr{
+  display: grid;
+  grid-template-columns: minmax(220px, var(--stubW-desktop)) repeat(5, minmax(var(--colMin), 1fr));
+  column-gap: 0;
+}
+@media (max-width: 1024px){
+  .table .thead .tr, .table .tbody .tr{
+    grid-template-columns: minmax(240px, var(--stubW-tablet)) repeat(5, minmax(var(--colMin), 1fr));
+  }
+}
+@media (max-width: 640px){
+  .table .thead .tr, .table .tbody .tr{
+    grid-template-columns: minmax(280px, var(--stubW-mobile)) repeat(5, minmax(var(--colMin), 1fr));
+  }
+}
+.table { position: relative; }
+.table .thead{ position: sticky; top: 0; z-index: 30; border-radius: 8px 8px 0 0; }
+.table .thead .th{
+  position: sticky; top: 0; z-index: 31;
+  background: linear-gradient(90deg,#1e6bb8,#2a90d9); color:#fff;
+  box-shadow: 0 1px 0 rgba(0,0,0,.04);
+  padding: 14px 8px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: normal;
+  word-break: break-word;
+}
+.table .thead .th + .th{ border-left: 1px solid rgba(255,255,255,.15); }
+.table .thead .th:first-child{ border-radius: 8px 0 0 0; }
+.table .thead .th:last-child{ border-radius: 0 8px 0 0; }
+.table .td--stub{
+  position: sticky; left: 0; z-index: 20;
+  background:#F8F9FA; border-right: 1px solid var(--border-color);
+}
+.table .thead .th--stub{ left: 0; z-index: 32; }
+.table .th, .table .td{ min-width: 0; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+</style>
+
+
+<style id="pdf-branding-css-2025-09-04">
+.pdf-branding {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.pdf-branding img { height: 32px; }
+.pdf-branding .disclaimer {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  flex: 1 1 320px;
+}
+@media print {
+  .pdf-branding img.print-visible { display: inline-block !important; }
+}
+</style>
+
+<style id="column-align-hotfix-2025-09-04">
+:root{
+  --stubW-desktop: 28%;
+  --stubW-tablet: 35%;
+  --stubW-mobile: 44%;
+  --colMin: 140px;
+}
+.table .thead .tr,
+.table .tbody .tr{
+  display: grid;
+  grid-template-columns: minmax(220px, var(--stubW-desktop)) repeat(5, minmax(var(--colMin), 1fr));
+  column-gap: 0;
+}
+@media (max-width: 1024px){
+  .table .thead .tr, .table .tbody .tr{
+    grid-template-columns: minmax(240px, var(--stubW-tablet)) repeat(5, minmax(var(--colMin), 1fr));
+  }
+}
+@media (max-width: 640px){
+  .table .thead .tr, .table .tbody .tr{
+    grid-template-columns: minmax(280px, var(--stubW-mobile)) repeat(5, minmax(var(--colMin), 1fr));
+  }
+}
+.table, .table-container{
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+}
+.table { position: relative; }
+.table .thead{
+  position: sticky; top: 0; z-index: 30;
+  border-radius: 8px 8px 0 0;
+}
+.table .thead .th{ position: static !important; z-index: 31; }
+
+.table .td--stub{
+  position: sticky; left: 0; z-index: 20;
+  background:#F8F9FA; border-right: 1px solid var(--border-color);
+}
+.table .thead .th--stub{
+  position: sticky !important; left: 0; z-index: 32;
+  background: linear-gradient(90deg,#1e6bb8,#2a90d9); color:#fff;
+}
+.table .thead .tr{ width: auto !important; }
+.table .th, .table .td{ min-width: 0; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+</style>
+
+</head>
+<body>
+  <main class="page">
+    <div id="main-content"></div>
+    <div id="results-card"></div>
+        <span id="timestamp"></span>
+  </main>
+<script>
+const SHEETS = {"Données de calcul":[[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"🏢 Simulateur Management Package\nCalculez l'impact fiscal ",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Mode d'emploi : ",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"SECTION 1 - Entrez vos données dans le cadre rose prévu à cet effet en suivant les indications pour chacune des cases. Indiquer 0 si vous n'avez pas l'information",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"SECTION 2 - Chacune des hypothèses envisageables est figurée par un diagramme circulaire permettant d'illustrer le montant net perçu en comparant le niveau de prélèvements obligatoires.",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Hypothèses : ",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null," -La fiscalité applicable aux titres détenus via un PEA ne sont pas intégrés à la simulation compte tenu de l’incertitude du régime fiscal applicable à la plus-value de cession",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null," -La simulation repose sur les modalités d’acquisition et/ou de souscription suivantes : (i) les titres ont été souscrits, acquis ou attribués 'en contrepartie' de fonctions de salariés ou dirigeants exercées au sein de la société émettrice ou dans toute société fille ou mère de la société émettrice, le plan d’AGA / BSPCE a été émis conformément aux dispositions du Code de Commerce et du Code général des Impôts, (iii) les titres présentent un risque en capital, le bénéficiaire travaille dans la société depuis au moins 3 ans au jours de la cession (pour les BSPCE uniquement), (iv) les titres autres que ceux résultant de plan d’AGA, de stock-options ou de BSPCE ont été détenus pendant deux ans au moins et (v) Les titres n’ont pas été inscrits en PEA.  Cette simulation ne prend pas en compte les éventuelles opérations de haut de bilan réalisés pendant la durée de détention des titres. ",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"📥 SECTION 1 Données",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"I- Situation familiale",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Situation matrimoniale",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Nombre de personnes à charge",null,"Notamment enfants mineurs",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Quotient familial","=IF(D20=\"marié\",2,IF(D20=\"pacsé\",2,1))+IF(D21<3,0.5*D21,D21-1)",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Autres revenus imposables du foyer fiscal",null,"Il s'agit des revenus des autres personnes composant le foyer, ainsi que des autres revenus du dirigeant (hors plus-value de cession des titres)",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"II- Modalités d'acquisition / souscription des valeurs mobilières ",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Est-ce que les titres ont été souscrits, acquis ou attribués 'en contrepartie' de fonctions de salariés ou dirigeants exercées au sein de la société émettrice ou dans toute société fille ou mère de la société émettrice ?",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Est-ce que les titres résultent d’un plan d’AGA mis conformément aux dispositions du Code de commerce ?",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Est-ce que les titres résultent d’un plan de stock-options émis conformément aux dispositions du Code de commerce ?",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Est-ce que les titres résultent d’un plan de BSPCE émis conformément aux dispositions de l’article 163 bis G du Code général des impôts ?",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Les titres présentent-ils un risque de perte de capital souscrit ou acquis ?",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Les titres autres que ceux résultant de plan d’AGA, de stock-options ou de BSPCE ont été détenus pendant deux ans au moins ?",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Les titres ont-ils été inscrits dans un PEA? ",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Le manager travaille dans la société depuis au moins trois ans au jour de la cession (pour les BSPCE uniquement)",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"III- Prix d'acquisition / Prix de cession",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,"AO (PEA)","AO (hors PEA)","ADP","AGAO","AGADP","BSPCE","TOTAL",null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Date d'entrée ",null,null,null,null,null,null,"=MAX(D44:I44)",null,null,null,null,null,null,null],[null,null,"Valeur réelle de la société émettrice à la date d’acquisition ou de souscription des titres, ou s'agissant des AGA à la date d'attribution ",null,null,null,null,null,null,"=MAX(D45:I45)",null,null,null,null,null,null,null],[null,null,"Montant des dettes envers des associés / entreprises liées à la date d’acquisition ou de souscription (ou née après la date d'acquisition, de souscription ou d'attribution)",null,null,null,null,null,null,"=MAX(D46:I46)",null,null,null,null,null,null,null],[null,null,"Valeur réelle des capitaux propres à la date d’acquisition ou de souscription des titres, ou s'agissant des AGA à la date d'attribution ","=D45+D46","=E45+E46","=F45+F46","=G45+G46","=H45+H46","=I45+I46",null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Date de cession ",null,null,null,null,null,null,"=MAX(D49:I49)",null,null,null,null,null,null,null],[null,null,"Valeur réelle de la société émettrice à la date de la cession",null,null,null,null,null,null,"=MAX(D50:I50)",null,null,null,null,null,null,null],[null,null,"Montant des dettes envers des associés / entreprises liées à la date de cession",null,null,null,null,null,null,"=MAX(D51:I51)",null,null,null,null,null,null,null],[null,null,"Valeur réelle des capitaux propres à la date de la cession","=D50+D51","=E50+E51","=F50+F51","=G50+G51","=H50+H51","=I50+I51",null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Titres ",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Valeur réelle de la société émettrice à la date de la cession",null,null,null,null,null,null,"=MAX(D56:I56)",null,null,null,null,null,null,null],[null,null,"Montant des dettes envers des associés / entreprises liées à la date de cession",null,null,null,null,null,null,"=MAX(D57:I57)",null,null,null,null,null,null,null],[null,null,"Valeur réelle des capitaux propres à la date de la cession",null,null,null,null,null,null,"=MAX(D58:I58)",null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Calcul du Multiple","=IFERROR(D50/D45,0)","=IFERROR(E50/E45,0)","=IFERROR(F50/F45,0)","=IFERROR(G50/G45,0)","=IFERROR(H50/H45,0)","=IFERROR(I50/I45,0)","=MAX(D60:I60)",null,null,null,null,null,null,null],[null,null,"Calcul du Multiple retraité","=IFERROR(D52/D47,0)","=IFERROR(E52/E47,0)","=IFERROR(F52/F47,0)","=IFERROR(G52/G47,0)","=IFERROR(H52/H47,0)","=IFERROR(I52/I47,0)","=MAX(D61:I61)",null,null,null,null,null,null,null],[null,null,"Calcul du Plafond ","=IF(D61>=D60,D60,D61)","=IF(E61>=E60,E60,E61)","=IF(F61>=F60,F60,F61)","=IF(G61>=G60,G60,G61)","=IF(H61>=H60,H60,H61)","=IF(I61>=I60,I60,I61)","=MAX(D62:I62)",null,null,null,null,null,null,null],[null,null,"Calcul multipe projet","=3*D62","=3*E62","=3*F62","=3*G62","=3*H62","=3*I62","=MAX(D63:I63)",null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Nombre de titres",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Investissement à l'entrée (ou valeur des AGA ou BSPCE au moment de l'attribution définitive / exercice BSPCE)",null,null,null,null,null,null,"=SUM(D66:I66)",null,null,null,null,null,null,null],[null,null,"Prix  d'exercice / Valeur de l'ensemble des actions au moment de l'attribution définitive ","=D66","=E66","=F66","=G66","=H66","=I66","=SUM(D67:I67)",null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Valeur totale des titres à la sortie",null,null,null,null,null,null,"=SUM(D69:I69)",null,null,null,null,null,null,null],[null,null,"Multiple Investissement","=IFERROR(D69/D66,0)","=IFERROR(E69/E66,0)","=IFERROR(F69/F66,0)","=IFERROR(G69/G66,0)","=IFERROR(H69/H66,0)","=IFERROR(I69/I66,0)","=IFERROR(J69/J66,0)",null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Cash-out ou réinvestissement ",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"📊 SECTION 2 Résultats ",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Prix de cession total","=F179",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant brut (hors réinvestissement)","=SUMIF(D72:I72,\"Cash-out\",D69:I69)",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Impôt payé (impôt sur le revenu et prélèvements sociaux)","=F180",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant net","=D76-D77",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"% Montant net","=IFERROR(D78/D76,0)",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Taux effectif d'imposition","=IFERROR(D77/D76,0)",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"* Attention : Le présent document a été élaboré sur la base des dispositions légales, règlementaires et des instructions administratives en vigueur à la date du 1er septembre 2025. Le présent document est destiné à fournir une simulation aussi précise et complète que possible. Cependant, celle-ci ne dispense pas l'utilisateur de la consultation d'un conseil et doit faire l'objet de toute vérification nécessaire avant application. La responsabilité de son auteur et du cabinet Lamartine Conseil ne pourrait en aucun cas être recherchée sur la base de son contenu.\n",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,"AO",null,"AO",null,"ADP",null,"AGAO",null,"AGADP",null,"BSPCE",null,"Total ",null],[null,null,null,"PEA",null,"Hors PEA",null,"Hors PEA",null,"Hors PEA",null,"Hors PEA",null,"Hors PEA",null,null,null],[null,null,null,"#","Total €","#","Total €","#","Total €","#","Total €","#","Total €","#","Total €","#","Total €"],[null,null,"Prix d'acquisition / Prix d'exercice",null,null,"='Données de calcul'!E65","='Données de calcul'!E66","=F65","='Données de calcul'!G66","='Données de calcul'!G65","='Données de calcul'!G66","='Données de calcul'!H66","=H66","=I65","=I66","=F112+H112+J112+L112+N112","=G112+I112+K112+M112+O112"],[null,null,"Prix de revient",null,null,"=F112","='Données de calcul'!E67","=H112","=I112","=J112","='Données de calcul'!G66","='Données de calcul'!H66","='Données de calcul'!H67","=N112","=I67","=F113+H113+J113+L113+N113","=G113+I113+K113+M113+O113"],[null,null,"Valeur des titres à la sortie de l'opération",null,null,"=F113","='Données de calcul'!E69","=H113","='Données de calcul'!F69","=J113","='Données de calcul'!G69","=L113","='Données de calcul'!H69","=N113","=I69","=H114+L114+N114","=G114+I114+K114+M114+O114"],[null,null,"Multiple investissement",null,null,"=IFERROR(G114/G113,0)",null,"=IFERROR(I114/I113,0)",null,"=IFERROR(K114/K113,0)",null,"=IFERROR(M114/M113,0)",null,"=IFERROR(O114/O113,0)",null,"=IFERROR(Q114/Q113,0)",null],[null,null,"Cash-out / Réinvestissement ",null,null,"=E72",null,"=F72",null,"=G72",null,"=H72",null,"=I72",null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Prix de revient global",null,null,"=Q113",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Multiple de performance",null,null,"=J63",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fraction du gain net imposable en PV",null,null,"=IF((F119*F120-F119)<Q114,F119*F120-F119,Q114)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Gain net",null,null,"=Q114-Q113",null,null,null,null,null,null,null,null,null,null,null],[null,null,"% gain net imposable en PV",null,null,"=IFERROR(MIN(F121/F122,100%),0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"% gain net imposable en salaire",null,null,"=100%-F123",null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"AGAO",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Gain d'acquisition",null,null,"=K113",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable au gain d'acquisition",null,null,"=IFERROR(E204*(F127/(K113+M113)),0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Plus-value de cession ",null,null,"=(K114-K113)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fraction du gain net imposable en PV (en %)",null,null,"=F123",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant net imposable en PV ",null,null,"=IF(J116=\"Cash-out\",F129*F130,0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable au gain net imposable en PV ",null,null,"=E228*(F131/D224)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fraction du gain net imposable en salaire (en %)",null,null,"=F124",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant net imposable en salaire",null,null,"=F129*F133",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable au gain net imposable en salaire",null,null,"=IFERROR(E236*(F134/D232),0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"AGADP",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Gain d'acquisition",null,null,"=M113",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable au gain d'acquisition",null,null,"=IFERROR(E204*(F138/(K113+M113)),0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Plus-value de cession ",null,null,"=M114-M113",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fraction du gain net imposable en PV (en %)",null,null,"=F123",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant net imposable en PV ",null,null,"=IF(L116=\"Cash-out\",F140*F141,0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable au gain net imposable en PV ",null,null,"=E228*(F142/(D224))",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fraction du gain net imposable en salaire (en %)",null,null,"=+F124",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant net imposable en salaire",null,null,"=+F140*F144",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable au gain net imposable en salaire",null,null,"=IFERROR(E236*(F145/D232),0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"BSPCE",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Plus-value d'exercice",null,null,"=O114-O113",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable à la plus-value d'exercice",null,null,"=IF('Données de calcul'!D39=\"OUI\",0.128*F149,0.3*F149)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Plus-value de cession ",null,null,0,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fraction du gain net imposable en PV (en %)",null,null,"=F123",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant net imposable en PV ",null,null,"=F151*F152",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable au gain net imposable en PV ",null,null,"=E228*(F153/D224)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fraction du gain net imposable en salaire (en %)",null,null,"=F124",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant net imposable en salaire",null,null,"=F151*F155",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable au gain net imposable en salaire",null,null,"=IFERROR(E236*(F156/D232),0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"AO ",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Plus-value de cession ",null,null,"=G114-G113",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fraction du gain net imposable en PV (en %)",null,null,"=F123",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant net imposable en PV ",null,null,"=IF(F116=\"Cash-out\",F160*F161,0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable au gain net imposable en PV ",null,null,"=E228*(F162/D224)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fraction du gain net imposable en salaire (en %)",null,null,"=F155",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant net imposable en salaire",null,null,"=F160*F164",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable au gain net imposable en salaire",null,null,"=IFERROR(E236*(F165/D232),0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"ADP",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Plus-value de cession ",null,null,"=(I114-I113)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fraction du gain net imposable en PV (en %)",null,null,"=F123",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant net imposable en PV ",null,null,"=IF(H116=\"Cash-out\",F170*F171,0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable au gain net imposable en PV ",null,null,"=E228*(F172/D224)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fraction du gain net imposable en salaire (en %)",null,null,"=F124",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant net imposable en salaire",null,null,"=F170*F174",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Fiscalité applicable au gain net imposable en salaire",null,null,"=IFERROR(E236*(F175/D232),0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Prix de cession total","=F179",null,"=Q114",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Impôt payé (impôt sur le revenu et prélèvements sociaux)","=F180",null,"=IFERROR(F128+F135+F132+F150+F154+F157+F163+F166+F173+F176,0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Montant net","=F181",null,"=F179-F180",null,null,null,null,null,null,null,null,null,null,null],[null,null,"% Montant net","=F182",null,"=IFERROR(F181/F179,0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Taux effectif d'imposition",null,null,"=IFERROR(F180/F179,0)",null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Etape 1 : imposition du Gain d'acquisition AGA",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Valeur AGA au jour attribution définitive","=K113+M113",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Nombre AGA au jour attribution définitive","=J113+L113",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Nombre de titres cédés/apportés","=D195",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Valeur unitaire des titres au jour de l'acquisition","=IFERROR(D194/D195,0)",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Plus-value d'acquisition imposable","=IF(D194>300000,150000+D194-300000,D194/2)",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"IR","=G258","=D199*D200",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"contributions sociales (tranche < 300k€)",0.172,"=IF(D194<300000,D194*D201,300000*D201)",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"contributions sociales (tranche > 300k€)",0.197,"=IF(D194>300000,(D194-300000)*D202,0)",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"CEHR","=G274","=D203*D199",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Imposition ",null,"=SUM(E200:E203)",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Etape 2 : imposition du gain d'exercice (BSPCE)",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Valeur BSPCE au jour de l'exercice","=O113",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Prix d'exercice","=O112",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Nombre BSPCE exercés","=+N114",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Nombre de titres cédés/apportés","=D211",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Valeur unitaire des titres au jour de l'acquisition","=IFERROR(D209/D211,0)",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Plus-value d'exercice imposable","=O114-O113",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"IR","=IF('Données de calcul'!D39=\"OUI\",12.8%,19%)","=D215*$D$214",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"contributions sociales ",0.172,"=D216*$D$214",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Contribution exceptionnelle","=G274","=D217*$D$214",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Imposition ",null,"=SUM(E214:E217)",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Etape 3 : imposition de la plus-value de cession (163 Bis H)- sans requalification",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Plus-value de cession imposable flat tax","=F131+F142+F144+F162+F172",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"IR","=12.8%","=D225*D224",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"contributions sociales ",0.172,"=D224*D226",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Contribution exceptionnelle","=G274","=D224*D227",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Imposition ",null,"=SUM(E225:E227)",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Etape 4 : imposition de la plus-value de cession (163 Bis H)- requalification en plus-value",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Plus-value de cession imposable en salaire ","='Données de calcul'!F134+'Données de calcul'!F145+'Données de calcul'!F156+F165+F175",null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"IR","=G259","=D232*D233",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"contributions sociales ",0.1,"=D232*10%",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Contribution exceptionnelle","=G274","=D232*D235",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Imposition ",null,"=SUM(E233:E235)",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Calcul",null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Revenu net imposable (hypothèse)",null,null,"=D23",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Gain d'acquisition imposable (AGA)",null,null,"=D199",null,null,null,null,null,null,null,null,null,null,null],[null,null,"Plus-value de cession (163 Bis H)",null,null,"=D232",null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"revenu taxable au barème",null,null,"=F239+F240+F241",null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"Nombre de parts ",null,null,"=D22",null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,"TRANCHES D'IMPOSITION",null,"base par tranche","taux","impôt",null,null,null,null,null,null,null,null,null],[null,null,null,"jusqu à","=11497*F245","=IF($F$243<E249,$F$5243,E249)",0,"=F249*G249",null,null,null,null,null,null,null,null,null],[null,null,null,"jusqu à","=29315*F245","=IF(($F$243)<E250,($F$243-F249),(E250-F249))",0.11,"=F250*G250",null,null,null,null,null,null,null,null,null],[null,null,null,"jusqu à","=83823*F245","=IF(($F$243)<E251,($F$243-F250),(E251-E250))",0.3,"=F251*G251",null,null,null,null,null,null,null,null,null],[null,null,null,"jusqu à","=180294*F245","=IF(($F$243)<E252,($F$243-F251),(E252-E251))",0.41,"=F252*G252",null,null,null,null,null,null,null,null,null],[null,null,null,"au-delà de","=180294*F245","=IF(F243<E253,0,F243-E253)",0.45,"=F253*G253",null,null,null,null,null,null,null,null,null],[null,null,null,null,null,"=F243","total","=SUM(H249:H253)",null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,"IR au barème progressif ",null,"=H254","=F256/F243",null,null,null,null,null,null,null,null,null,null],[null,null,null,"IR sur revenu courant",null,"=IFERROR((F239/F243)*H254,0)","=F257/F239",null,null,null,null,null,null,null,null,null,null],[null,null,null,"AGA- IR sur gain d'acquisition",null,"=IFERROR((F240/F243)*H254,0)","=IFERROR(F258/F240,0)",null,null,null,null,null,null,null,null,null,null],[null,null,null,"PV de cession assimilée salaire",null,"=IFERROR((F241/F243)*H254,0)","=IFERROR(F259/F241,0)",null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"BASE CEHR (hors PV)",null,"=F243",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"PV cession (hors 163 Bis H et PV d'exercice BSPCE)",null,"=D224+D214",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,"BASE CEHR ",null,"=E262+E263",null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,"base par tranche","taux","impôt",null,null,null,null,null,null,null,null,null],[null,null,"jusqu'à",500000,"=D270",0,"=E270*F270",null,null,null,null,null,null,null,null,null],[null,null,"jusqu'à",1000000,"=IF(E264<=500000,0, MIN(500000,E264-500000))",0.03,"=E271*F271",null,null,null,null,null,null,null,null,null],[null,null,"au dela de ",1000000,"=IF(E264<=500000, 0,E264-500000)",0.04,"=E272*F272",null,null,null,null,null,null,null,null,null],[null,null,null,null,"=E270+E271+E272","total","=SUM(G270:G272)",null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,"=G273/E264",null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]],"Table capi":[["VIATEMIS PARTNERS",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],["TABLE DE CAPITALISATION",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],["Date: 20/12/2021",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,"Avant opération",null,null,null,"Opération 1","Après Opération 1",null,null,"Opération 2","Après opération 2",null,null,"Opération 3","Après Opération 3",null,null,null,"Opération 4",null,null,"Si conversion des OC (Fully diluted)",null,null,"TOTAL",null,null,null,null],["Actionnariat","Actions ordinaires","% de détention - capital social","Part des capitaux propres détenus (base KP au 30/11/2021)",null,"Apports de titres VIATEMIS par TSG et GAEDO","Actions ordinaires","% de détention du capital social",null,"Opérations sur titres (achat +, ventes -)","Actions ordinaires","% de détention du capital social",null,"Apports en numéraire par \nGAEDO, CED, CED2 et Co-investisseurs\n(8.550 K€)","Actions ordinaires","% de détention du capital social","Part des capitaux propres détenus (€)",null,"Emprunt obligataire  souscrit par TSG, AE, CED et Co-investisseur\n(4,5 M€) ","Obligations convertibles (non convertibles)",null,"Actions ordinaires  après éventuelle conversion","% de détention du capital social après éventuelle conversion",null,"TOTAL montant investisseurs",null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,"après éventuelle conversion",null,null,null,null,null,null],["Fondateurs ",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],["TEMIS Solutions Groupe (TSG)",96,"=B12/$B$27","=(1000/B27)*B12",null,922023,"=B12+F12","=G12/G27",null,null,"=O12+J12","=K12/$K$27",null,null,"=G12","=O12/O27","=O12*B29",null,2250000,"=+S12/B32",null,"=O12+T12","=V12/$V$27",null,"=S12+O12*$B$29",null,null,null,null],["Claude Bonnet",1,"=B13/B27","=(1000/B27)*B13",null,null,"=B13","=G13/G27",null,null,"=O13+J13","=K13/$K$27",null,null,"=G13","=O13/O27","=O13*$B$29",null,null,null,null,"=K13+T13","=V13/$V$27",null,"=S13+O13*$B$29",null,null,null,null],["Adrien Bonnet",1,"=B14/B27","=(1000/B27)*B14",null,null,"=B14","=G14/G27",null,null,"=O14+J14","=K14/$K$27",null,null,"=G14","=O15/O27","=O14*$B$29",null,null,null,null,"=K14+T14","=V14/$V$27",null,"=S14+O14*$B$29",null,null,null,null],["Emmanuelle Bonnet",1,"=B15/B27","=(1000/B27)*B15",null,null,"=B15","=G15/G27",null,null,"=O15+J15","=K15/$K$27",null,null,"=G15","=O15/O27","=O15*$B$29",null,null,null,null,"=K15+T15","=V15/$V$27",null,"=S15+O15*$B$29",null,null,null,null],["Théo Bonnet",1,"=B16/B27","=(1000/B27)*B16",null,null,"=B16","=G16/G27",null,null,"=O16+J16","=K16/$K$27",null,null,"=G16","=O16/O27","=O16*$B$29",null,null,null,null,"=K16+T16","=V16/$V$27",null,"=S16+O16*$B$29",null,null,null,null],["Managers",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],["Fanny Domansky",null,null,null,null,null,null,null,null,1,"=J18","=K18/$K$27",null,null,"=K18","=O18/$O$27","=O18*10",null,null,null,null,"=K18+T18","=V18/$V$27",null,"=O18*$B$29+N18",null,null,null,null],["Adrien Gallou",null,null,null,null,null,null,null,null,1,"=J19","=K19/$K$27",null,null,"=K19","=O19/$O$27","=O19*10",null,null,null,null,"=K19+T19","=V19/$V$27",null,"=O19*$B$29+N19",null,null,null,null],["GAEDO",null,null,null,null,66878,"=F20-G18-G19","=G20/G27",null,-2,"=G20+J20","=K20/$K$27",null,"=B30","=N20/10+K20","=O20/$O$27","=O20*B29",null,null,null,null,"=O20","=V20/$V$27",null,"=O20*$B$29",null,null,null,null],["Investisseurs",null,null,0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,"*",null,null,null,null],["SCR CE Développement - CED\n(Alliance Entreprendre)",null,null,null,null,null,null,null,null,null,null,null,null,3148140,"=ROUND(N22/B29,0)","=O22/O27","=O22*B29",null,869380,"=S22/$B$32",null,"=O22+T22","=V22/$V$27",null,"=N22+S22","=P22+P23",null,null,null],["SCR CE Développement - CED 2\n(Alliance Entreprendre)",null,null,null,null,null,null,null,null,null,null,null,null,1951850,"=ROUND(N23/B29,0)","=O23/O27","=O23*B29",null,539000,"=S23/$B$32",null,"=O23+T23","=V23/$V$27",null,"=N23+S23",null,null,null,null],["CEPAL Capital Développement",null,null,null,null,null,null,null,null,null,null,null,null,922010,"=N24/B29","=O24/O27","=O24*B29",null,254620,"=S24/$B$32",null,"=O24+T24","=V24/$V$27",null,"=N24+S24",null,null,null,null],["Garibaldi Participations",null,null,null,null,null,null,null,null,null,null,null,null,"=2128000","=N25/B29","=O25/O27","=O25*B29",null,587000,"=S25/$B$32",null,"=O25+T25","=V25/$V$27",null,"=N25+S25",null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],["TOTAL","=SUM(B12:B16)","=SUM(C9:C26)","=SUM(D12:D25)",null,"=SUM(F9:F26)","=SUM(G9:G26)","=SUM(H12:H26)",null,"=J18+J19+J20","=SUM(K12:K26)","=SUM(L12:L25)",null,"=SUM(N18:N26)","=SUM(O12:O26)","=SUM(P12:P26)","=SUM(Q12:Q26)",null,"=SUM(S12:S26)","=SUM(T12:T26)",null,"=SUM(V12:V25)","=SUM(W12:W25)",null,"=SUM(Y12:Y26)","=Y22+Y23+Y24+Y25",null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,"=+S22+S23",null,null,null,null,null,null,null,null,null,null],[null,10,"€",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,"=+S28/S27","=SUM(T22:T25)*10+SUM(N22:N25)",null,null,null,null,null,null,null,null,null],[null,400000,"€",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,10,"€",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]]};
+const FORM_MAP = [{"section":"I/II","label":"I- Situation familiale","scenario":"","a1":"D19","type":"number","required":true,"number_format":"General","default":null},{"section":"I/II","label":"Situation matrimoniale","scenario":"","a1":"D20","type":"select","required":false,"number_format":"General","default":null,"options":["Célibataire","Marié","Pacsé","Divorcé"]},{"section":"I/II","label":"Nombre de personnes à charge","scenario":"","a1":"D21","type":"number","required":true,"number_format":"General","default":null},{"section":"I/II","label":"Autres revenus imposables du foyer fiscal","scenario":"","a1":"D23","type":"number","required":true,"number_format":"#,##0.00\\ \"€\"","default":null},{"section":"I/II","label":"II- Modalités d'acquisition / souscription des valeurs mobilières","scenario":"","a1":"D25","type":"number","required":true,"number_format":"General","default":null},{"section":"I/II","label":"Est-ce que les titres ont été souscrits, acquis ou attribués 'en contrepartie' de fonctions de salariés ou dirigeants exercées au sein de la société émettrice ou dans toute société fille ou mère de la société émettrice ?","scenario":"","a1":"D27","type":"select","required":false,"number_format":"General","default":null,"options":["OUI","NON"]},{"section":"I/II","label":"Est-ce que les titres résultent d’un plan d’AGA mis conformément aux dispositions du Code de commerce ?","scenario":"","a1":"D29","type":"select","required":false,"number_format":"General","default":null,"options":["OUI","NON"]},{"section":"I/II","label":"Est-ce que les titres résultent d’un plan de stock-options émis conformément aux dispositions du Code de commerce ?","scenario":"","a1":"D30","type":"select","required":false,"number_format":"General","default":null,"options":["OUI","NON"]},{"section":"I/II","label":"Est-ce que les titres résultent d’un plan de BSPCE émis conformément aux dispositions de l’article 163 bis G du Code général des impôts ?","scenario":"","a1":"D31","type":"select","required":false,"number_format":"General","default":null,"options":["OUI","NON"]},{"section":"I/II","label":"Les titres présentent-ils un risque de perte de capital souscrit ou acquis ?","scenario":"","a1":"D33","type":"select","required":false,"number_format":"General","default":null,"options":["OUI","NON"]},{"section":"I/II","label":"Les titres autres que ceux résultant de plan d’AGA, de stock-options ou de BSPCE ont été détenus pendant deux ans au moins ?","scenario":"","a1":"D35","type":"select","required":false,"number_format":"General","default":null,"options":["OUI","NON"]},{"section":"I/II","label":"Les titres ont-ils été inscrits dans un PEA?","scenario":"","a1":"D37","type":"select","required":false,"number_format":"General","default":null,"options":["OUI","NON"]},{"section":"I/II","label":"Le manager travaille dans la société depuis au moins trois ans au jour de la cession (pour les BSPCE uniquement)","scenario":"","a1":"D39","type":"select","required":false,"number_format":"General","default":null,"options":["OUI","NON"]},{"section":"I/II","label":"III- Prix d'acquisition / Prix de cession","scenario":"","a1":"D41","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Date d'entrée","scenario":"AO (PEA)","a1":"D44","type":"date","required":true,"number_format":"mm-dd-yy","default":null},{"section":"III","label":"Date d'entrée","scenario":"AO (hors PEA)","a1":"E44","type":"date","required":true,"number_format":"mm-dd-yy","default":null},{"section":"III","label":"Date d'entrée","scenario":"ADP","a1":"F44","type":"date","required":true,"number_format":"mm-dd-yy","default":null},{"section":"III","label":"Date d'entrée","scenario":"AGAO","a1":"G44","type":"date","required":true,"number_format":"mm-dd-yy","default":null},{"section":"III","label":"Date d'entrée","scenario":"AGADP","a1":"H44","type":"date","required":true,"number_format":"mm-dd-yy","default":null},{"section":"III","label":"Date d'entrée","scenario":"BSPCE","a1":"I44","type":"date","required":true,"number_format":"mm-dd-yy","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date d’acquisition ou de souscription des titres, ou s'agissant des AGA à la date d'attribution","scenario":"AO (PEA)","a1":"D45","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date d’acquisition ou de souscription des titres, ou s'agissant des AGA à la date d'attribution","scenario":"AO (hors PEA)","a1":"E45","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date d’acquisition ou de souscription des titres, ou s'agissant des AGA à la date d'attribution","scenario":"ADP","a1":"F45","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date d’acquisition ou de souscription des titres, ou s'agissant des AGA à la date d'attribution","scenario":"AGAO","a1":"G45","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date d’acquisition ou de souscription des titres, ou s'agissant des AGA à la date d'attribution","scenario":"AGADP","a1":"H45","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date d’acquisition ou de souscription des titres, ou s'agissant des AGA à la date d'attribution","scenario":"BSPCE","a1":"I45","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date d’acquisition ou de souscription (ou née après la date d'acquisition, de souscription ou d'attribution)","scenario":"AO (PEA)","a1":"D46","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date d’acquisition ou de souscription (ou née après la date d'acquisition, de souscription ou d'attribution)","scenario":"AO (hors PEA)","a1":"E46","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date d’acquisition ou de souscription (ou née après la date d'acquisition, de souscription ou d'attribution)","scenario":"ADP","a1":"F46","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date d’acquisition ou de souscription (ou née après la date d'acquisition, de souscription ou d'attribution)","scenario":"AGAO","a1":"G46","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date d’acquisition ou de souscription (ou née après la date d'acquisition, de souscription ou d'attribution)","scenario":"AGADP","a1":"H46","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date d’acquisition ou de souscription (ou née après la date d'acquisition, de souscription ou d'attribution)","scenario":"BSPCE","a1":"I46","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Date de cession","scenario":"AO (PEA)","a1":"D49","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Date de cession","scenario":"AO (hors PEA)","a1":"E49","type":"date","required":true,"number_format":"mm-dd-yy","default":null},{"section":"III","label":"Date de cession","scenario":"ADP","a1":"F49","type":"date","required":true,"number_format":"mm-dd-yy","default":null},{"section":"III","label":"Date de cession","scenario":"AGAO","a1":"G49","type":"date","required":true,"number_format":"mm-dd-yy","default":null},{"section":"III","label":"Date de cession","scenario":"AGADP","a1":"H49","type":"date","required":true,"number_format":"mm-dd-yy","default":null},{"section":"III","label":"Date de cession","scenario":"BSPCE","a1":"I49","type":"date","required":true,"number_format":"mm-dd-yy","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date de la cession","scenario":"AO (PEA)","a1":"D50","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date de la cession","scenario":"AO (hors PEA)","a1":"E50","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date de la cession","scenario":"ADP","a1":"F50","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date de la cession","scenario":"AGAO","a1":"G50","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date de la cession","scenario":"AGADP","a1":"H50","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date de la cession","scenario":"BSPCE","a1":"I50","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date de cession","scenario":"AO (PEA)","a1":"D51","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date de cession","scenario":"AO (hors PEA)","a1":"E51","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date de cession","scenario":"ADP","a1":"F51","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date de cession","scenario":"AGAO","a1":"G51","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date de cession","scenario":"AGADP","a1":"H51","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date de cession","scenario":"BSPCE","a1":"I51","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Titres","scenario":"AO (PEA)","a1":"D54","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Titres","scenario":"AO (hors PEA)","a1":"E54","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Titres","scenario":"ADP","a1":"F54","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Titres","scenario":"AGAO","a1":"G54","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Titres","scenario":"AGADP","a1":"H54","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Titres","scenario":"BSPCE","a1":"I54","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date de la cession","scenario":"AO (PEA)","a1":"D56","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date de la cession","scenario":"AO (hors PEA)","a1":"E56","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date de la cession","scenario":"ADP","a1":"F56","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date de la cession","scenario":"AGAO","a1":"G56","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date de la cession","scenario":"AGADP","a1":"H56","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle de la société émettrice à la date de la cession","scenario":"BSPCE","a1":"I56","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date de cession","scenario":"AO (PEA)","a1":"D57","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date de cession","scenario":"AO (hors PEA)","a1":"E57","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date de cession","scenario":"ADP","a1":"F57","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date de cession","scenario":"AGAO","a1":"G57","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date de cession","scenario":"AGADP","a1":"H57","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Montant des dettes envers des associés / entreprises liées à la date de cession","scenario":"BSPCE","a1":"I57","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur réelle des capitaux propres à la date de la cession","scenario":"AO (PEA)","a1":"D58","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur réelle des capitaux propres à la date de la cession","scenario":"AO (hors PEA)","a1":"E58","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur réelle des capitaux propres à la date de la cession","scenario":"ADP","a1":"F58","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur réelle des capitaux propres à la date de la cession","scenario":"AGAO","a1":"G58","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur réelle des capitaux propres à la date de la cession","scenario":"AGADP","a1":"H58","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur réelle des capitaux propres à la date de la cession","scenario":"BSPCE","a1":"I58","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Nombre de titres","scenario":"AO (PEA)","a1":"D65","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Nombre de titres","scenario":"AO (hors PEA)","a1":"E65","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Nombre de titres","scenario":"ADP","a1":"F65","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Nombre de titres","scenario":"AGAO","a1":"G65","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Nombre de titres","scenario":"AGADP","a1":"H65","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Nombre de titres","scenario":"BSPCE","a1":"I65","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Investissement à l'entrée (ou valeur des AGA ou BSPCE au moment de l'attribution définitive / exercice BSPCE)","scenario":"AO (PEA)","a1":"D66","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Investissement à l'entrée (ou valeur des AGA ou BSPCE au moment de l'attribution définitive / exercice BSPCE)","scenario":"AO (hors PEA)","a1":"E66","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Investissement à l'entrée (ou valeur des AGA ou BSPCE au moment de l'attribution définitive / exercice BSPCE)","scenario":"ADP","a1":"F66","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Investissement à l'entrée (ou valeur des AGA ou BSPCE au moment de l'attribution définitive / exercice BSPCE)","scenario":"AGAO","a1":"G66","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Investissement à l'entrée (ou valeur des AGA ou BSPCE au moment de l'attribution définitive / exercice BSPCE)","scenario":"AGADP","a1":"H66","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Investissement à l'entrée (ou valeur des AGA ou BSPCE au moment de l'attribution définitive / exercice BSPCE)","scenario":"BSPCE","a1":"I66","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur totale des titres à la sortie","scenario":"AO (PEA)","a1":"D69","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur totale des titres à la sortie","scenario":"AO (hors PEA)","a1":"E69","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur totale des titres à la sortie","scenario":"ADP","a1":"F69","type":"number","required":true,"number_format":"#,##0.00","default":null},{"section":"III","label":"Valeur totale des titres à la sortie","scenario":"AGAO","a1":"G69","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur totale des titres à la sortie","scenario":"AGADP","a1":"H69","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Valeur totale des titres à la sortie","scenario":"BSPCE","a1":"I69","type":"number","required":true,"number_format":"General","default":null},{"section":"III","label":"Cash-out ou réinvestissement","scenario":"AO (PEA)","a1":"D72","type":"select","required":false,"number_format":"General","default":null,"options":["Cash-out","Réinvestissement","N/A"]},{"section":"III","label":"Cash-out ou réinvestissement","scenario":"AO (hors PEA)","a1":"E72","type":"select","required":false,"number_format":"#,##0.00","default":null,"options":["Cash-out","Réinvestissement","N/A"]},{"section":"III","label":"Cash-out ou réinvestissement","scenario":"ADP","a1":"F72","type":"select","required":false,"number_format":"#,##0.00","default":null,"options":["Cash-out","Réinvestissement","N/A"]},{"section":"III","label":"Cash-out ou réinvestissement","scenario":"AGAO","a1":"G72","type":"select","required":false,"number_format":"#,##0.00","default":null,"options":["Cash-out","Réinvestissement","N/A"]},{"section":"III","label":"Cash-out ou réinvestissement","scenario":"AGADP","a1":"H72","type":"select","required":false,"number_format":"#,##0.00","default":null,"options":["Cash-out","Réinvestissement","N/A"]},{"section":"III","label":"Cash-out ou réinvestissement","scenario":"BSPCE","a1":"I72","type":"select","required":false,"number_format":"#,##0.00","default":null,"options":["Cash-out","Réinvestissement","N/A"]}];
+const RESULTS = [{"label":"Prix de cession total","a1":"D75","format":"currency"},{"label":"Montant brut (hors réinvestissement)","a1":"D76","format":"currency"},{"label":"Impôt payé (IR + PS)","a1":"D77","format":"currency"},{"label":"Montant net","a1":"D78","format":"currency"},{"label":"% Montant net","a1":"D79","format":"percent"},{"label":"Taux effectif d’imposition","a1":"D80","format":"percent"}];
+
+
+function a1ToRC(a1) {
+  const match = /^([A-Z]+)(\d+)$/.exec(a1.toUpperCase());
+  if (!match) throw new Error(`Invalid A1 notation: ${a1}`);
+  const colStr = match[1];
+  const row = parseInt(match[2], 10) - 1;
+  let col = 0;
+  for (let i = 0; i < colStr.length; i++) {
+    col = col * 26 + (colStr.charCodeAt(i) - 64);
+  }
+  return { col: col - 1, row };
+}
+
+function rcToA1(row, col) {
+    let temp, a1 = '';
+    let colNum = col + 1;
+    while (colNum > 0) {
+        temp = (colNum - 1) % 26;
+        a1 = String.fromCharCode(temp + 65) + a1;
+        colNum = (colNum - temp - 1) / 26;
+    }
+    return a1 + (row + 1);
+}
+
+
+function excelSerialToDateString(serial) {
+    if (serial == null || isNaN(serial)) return '';
+    const excelEpoch = Date.UTC(1899, 11, 30);
+    const ms = Number(serial) * 86400000;
+    const date = new Date(excelEpoch + ms);
+    return date.toISOString().slice(0, 10);
+}
+
+function dateStringToExcelSerial(dateString) {
+    if (!dateString) return null;
+    const time = new Date(dateString + 'T00:00:00Z').getTime();
+    const excelEpoch = Date.UTC(1899, 11, 30);
+    return (time - excelEpoch) / 86400000;
+}
+
+function formatCurrency(value) {
+  if (value == null || isNaN(value)) return '—';
+  return Number(value).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+}
+
+function formatPercent(value) {
+  if (value == null || isNaN(value)) return '—';
+  return Number(value).toLocaleString('fr-FR', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatNumber(value) {
+    if (value == null || isNaN(value)) return '—';
+    return Number(value).toLocaleString('fr-FR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+
+(() => {
+    let chartInstance = null;
+    Chart.register(ChartDataLabels);
+  try {
+
+    
+    const FINAL_FORM_MAP = FORM_MAP
+        .map(field => ({ ...field, default: null }))
+        .filter(field => field.scenario !== 'AO (PEA)');
+    
+    const row67 = SHEETS['Données de calcul'][66];
+    if(row67) {
+        row67[3] = "=D66"; 
+        row67[4] = "=E66";
+        row67[5] = "=F66"; 
+        row67[6] = "=G66"; 
+        row67[7] = "=H66"; 
+        row67[8] = "=I66"; 
+    }
+
+
+    const hf = HyperFormula.HyperFormula.buildFromSheets(SHEETS, {
+      licenseKey: 'gpl-v3',
+      smartRounding: true
+    });
+    const sheetId = hf.getSheetId('Données de calcul');
+    if (sheetId === undefined) {
+        throw new Error("Sheet 'Données de calcul' not found in hf_sheets.json");
+    }
+
+    const mainContentContainer = document.getElementById('main-content');
+    const resultsContainer = document.getElementById('results-card');
+
+
+    function createFieldElement(field) {
+        let el;
+        if(field.type === 'select') {
+            const container = document.createElement('div');
+            container.className = 'chips';
+            field.options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'chip';
+                button.textContent = option;
+                button.dataset.value = option;
+                container.appendChild(button);
+            });
+            
+            container.addEventListener('click', (e) => {
+                if(e.target.classList.contains('chip')) {
+                    const selectedValue = e.target.dataset.value;
+                    Array.from(container.children).forEach(child => child.classList.remove('chip--selected'));
+                    e.target.classList.add('chip--selected');
+                    const { col, row } = a1ToRC(field.a1);
+                    hf.setCellContents({ sheet: sheetId, row, col }, [[selectedValue]]);
+                    renderResults();
+                    updateCalculatedCells();
+                }
+            });
+
+            el = container;
+
+        } else {
+             el = document.createElement('input');
+            el.type = (field.type === 'date') ? 'date' : ((field.type === 'number') ? 'text' : 'text');
+            if (field.type === 'number') {
+                el.step = 'any';
+                el.inputMode = 'numeric';
+                el.pattern = '[0-9]*';
+            }
+            el.value = (field.default != null)
+                ? ((el.type === 'date') ? excelSerialToDateString(field.default) : String(field.default))
+                : '';
+        }
+         if (field.required) el.required = true;
+         if (el.tagName !== 'DIV') {
+            el.id = `field-${field.a1}`;
+         }
+         
+        const updateFn = () => {
+            let value = el.value;
+            if (field.type === 'number') {
+                // Supprimer les espaces et caractères non numériques sauf le point et la virgule
+                const cleanValue = value.replace(/[^\d,.-]/g, '').replace(',', '.');
+                value = (cleanValue === '' || isNaN(parseFloat(cleanValue))) ? null : Number(cleanValue);
+            } else if (field.type === 'date') {
+                value = dateStringToExcelSerial(value);
+            }
+            
+            const { col, row } = a1ToRC(field.a1);
+            hf.setCellContents({ sheet: sheetId, row, col }, [[value]]);
+            renderResults();
+            updateCalculatedCells();
+        };
+
+        const formatNumberInput = (inputEl) => {
+            if (field.type === 'number') {
+                inputEl.addEventListener('input', (e) => {
+                    const cursorPos = e.target.selectionStart;
+                    const oldLength = e.target.value.length;
+                    
+                    // Nettoyer la valeur
+                    const cleanValue = e.target.value.replace(/[^\d,.-]/g, '').replace(',', '.');
+                    const numValue = parseFloat(cleanValue);
+                    
+                    if (!isNaN(numValue)) {
+                        // Formater avec des séparateurs de milliers
+                        const formatted = numValue.toLocaleString('fr-FR', {
+                            maximumFractionDigits: 2,
+                            useGrouping: true
+                        });
+                        e.target.value = formatted;
+                        
+                        // Ajuster la position du curseur
+                        const newLength = formatted.length;
+                        const diff = newLength - oldLength;
+                        const newPos = Math.max(0, cursorPos + diff);
+                        setTimeout(() => e.target.setSelectionRange(newPos, newPos), 0);
+                    }
+                    
+                    updateFn();
+                });
+                
+                inputEl.addEventListener('blur', (e) => {
+                    const cleanValue = e.target.value.replace(/[^\d,.-]/g, '').replace(',', '.');
+                    const numValue = parseFloat(cleanValue);
+                    
+                    if (!isNaN(numValue)) {
+                        e.target.value = numValue.toLocaleString('fr-FR', {
+                            maximumFractionDigits: 2,
+                            useGrouping: true
+                        });
+                    }
+                });
+            } else {
+                inputEl.addEventListener('input', updateFn);
+            }
+        };
+
+        if(el.tagName === 'INPUT') {
+            formatNumberInput(el);
+        }
+
+        return el;
+    }
+
+    function createCheckboxElement(field) {
+        const label = document.createElement('label');
+        label.className = 'check';
+        
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = `field-${field.a1}`;
+        input.checked = false; 
+
+        const span = document.createElement('span');
+        span.textContent = field.label;
+
+        label.appendChild(input);
+        label.appendChild(span);
+
+        input.addEventListener('change', () => {
+            const value = input.checked ? 'OUI' : 'NON';
+            const { col, row } = a1ToRC(field.a1);
+            hf.setCellContents({ sheet: sheetId, row, col }, [[value]]);
+            renderResults();
+            updateCalculatedCells();
+        });
+
+        return label;
+    }
+    
+    function renderMainContent() {
+        mainContentContainer.innerHTML = '';
+
+        const hero = document.createElement('section');
+        hero.className = 'hero card';
+        hero.innerHTML = `
+            <div class="hero__icon"><i class="fa-solid fa-calculator"></i></div>
+            <div class="hero__title">Simulateur Management package</div>
+            <div class="hero__subtitle">calculer l'impact fiscal de la réforme du régime des management packages introduite par la Loi de Finances pour 2025</div>
+            <p class="hero__note"><b>Note importante:</b> Cette simulation est basée sur la loi de finances 2025. Les résultats sont indicatifs et susceptibles d'évoluer selon les commentaires administratifs.</p>
+        `;
+        mainContentContainer.appendChild(hero);
+
+        const sitFamCard = document.createElement('section');
+        sitFamCard.className = 'bloc bloc--etat-foyer card';
+        sitFamCard.innerHTML = `<h2><i class="fa-solid fa-users"></i> Situation familiale</h2>`;
+        const sitFamGrid = document.createElement('div');
+        sitFamGrid.className = 'formgrid--2col';
+        
+        const fieldsSitFam = {
+          'D20': FINAL_FORM_MAP.find(f => f.a1 === 'D20'),
+          'D21': FINAL_FORM_MAP.find(f => f.a1 === 'D21'),
+          'D23': FINAL_FORM_MAP.find(f => f.a1 === 'D23'),
+        };
+
+        sitFamGrid.innerHTML = `
+            <label>Situation matrimoniale :</label> <div id="D20-container"></div>
+            <label>Nombre de personnes à charge :</label> <div id="D21-container"></div>
+            <label>Quotient familial :</label> <div class="calculated-val" id="cell-D22"></div>
+            <label>Autres revenus imposables du foyer fiscal (€) :</label> <div id="D23-container"></div>
+        `;
+        sitFamCard.appendChild(sitFamGrid);
+        mainContentContainer.appendChild(sitFamCard);
+        document.getElementById('D20-container').appendChild(createFieldElement(fieldsSitFam.D20));
+        document.getElementById('D21-container').appendChild(createFieldElement(fieldsSitFam.D21));
+        document.getElementById('D23-container').appendChild(createFieldElement(fieldsSitFam.D23));
+
+        const modalitesCard = document.createElement('section');
+        modalitesCard.className = 'bloc bloc--modalites card';
+        modalitesCard.innerHTML = `<h2><i class="fa-solid fa-file-signature"></i> Modalités d'acquisition</h2>`;
+        const modalitesGrid = document.createElement('div');
+        modalitesGrid.className = 'checks-grid';
+        const checkboxFields = FINAL_FORM_MAP.filter(f => f.section === 'I/II' && f.options && f.options.includes('OUI'));
+        checkboxFields.forEach(field => {
+            modalitesGrid.appendChild(createCheckboxElement(field));
+        });
+        modalitesCard.appendChild(modalitesGrid);
+        mainContentContainer.appendChild(modalitesCard);
+
+
+        const dataCard = document.createElement('section');
+        dataCard.className = 'bloc card';
+        
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'table-container';
+        
+        const singleTable = renderTable("Données à modifier", [43,44,45,46,48,49,50,53,64,65,66,68,69,71]);
+dataCard.appendChild(singleTable);
+        
+        mainContentContainer.appendChild(dataCard);
+        updateCalculatedCells();
+    }
+    
+    function renderTable(title, rowsToShow) {
+        const container = document.createElement('div');
+        container.innerHTML = `<h2><i class="fa-solid fa-edit"></i> ${title}</h2>`;
+
+        const table = document.createElement('div');
+        table.className = 'table';
+        const thead = document.createElement('div');
+        thead.className = 'thead';
+        const tbody = document.createElement('div');
+        tbody.className = 'tbody';
+
+        const scenarioCols = {
+            'E': { header: 'AO (hors PEA)' }, 'F': { header: 'ADP' },
+            'G': { header: 'AGAO' }, 'H': { header: 'AGADP' }, 'I': { header: 'BSPCE' }
+        };
+        const fieldsByA1 = FINAL_FORM_MAP.reduce((acc, field) => {
+            if (field.section === 'III') acc[field.a1] = field;
+            return acc;
+        }, {});
+        const labelByRow = FINAL_FORM_MAP.filter(f => f.section === 'III').reduce((m, f) => {
+            const mRow = /[A-Z]+(\d+)/.exec(f.a1);
+            if (mRow) { const r = parseInt(mRow[1], 10); if (!m[r]) m[r] = f.label; }
+            return m;
+        }, {});
+
+
+        const headerRow = document.createElement('div');
+        headerRow.className = 'tr';
+        headerRow.innerHTML = `<div class="th th--stub">Type de données</div>` + Object.values(scenarioCols).map(s => `<div class="th">${s.header}</div>`).join('');
+        thead.appendChild(headerRow);
+
+        rowsToShow.forEach(i => {
+            const rowData = SHEETS['Données de calcul'][i];
+            let label = rowData ? rowData[2] : ''; label = (label == null || label === '') ? (labelByRow[i+1] || '') : label;
+            if (!label || !label.trim()) { return; }
+            if (label && (label.trim().toLowerCase().startsWith("augmentation de capital pendant l'opération") || label.trim().toLowerCase().startsWith("titres"))) {
+                const sub = document.createElement('div');
+                sub.className = 'tr tr--subsection';
+                sub.innerHTML = `<div class="td td--subsection">${label}</div>`;
+                tbody.appendChild(sub);
+                return;
+            }
+
+            const tr = document.createElement('div');
+            tr.className = 'tr';
+            
+            const labelTd = document.createElement('div');
+            labelTd.className = 'td td--stub';
+            labelTd.textContent = label;
+            tr.appendChild(labelTd);
+
+            for (const colLetter in scenarioCols) {
+    const td = document.createElement('div');
+    td.className = 'td';
+    const a1 = `${colLetter}${i + 1}`;
+    let fieldDef = fieldsByA1[a1];
+    const FORCE_CALC_LABELS = [
+        "prix d'exercice / valeur de l'ensemble des actions au moment de l'attribution définitive",
+        "multiple investissement"
+    ];
+    const labelLc = (label || '').toLowerCase();
+    if (fieldDef && FORCE_CALC_LABELS.some(k => labelLc.includes(k))) {
+        fieldDef = null;
+    }
+    if (!fieldDef) {
+        const isNombreTitres = (label || '').toLowerCase().includes('nombre de titres');
+        if (isNombreTitres) {
+            fieldDef = { a1, type: 'number', required: true };
+        }
+    }
+    if (fieldDef) {
+        td.appendChild(createFieldElement(fieldDef));
+    } else {
+        const valDiv = document.createElement('div');
+        valDiv.className = 'calculated-val';
+        valDiv.id = `cell-${a1}`;
+        td.appendChild(valDiv);
+    }
+    tr.appendChild(td);
+}
+
+            tbody.appendChild(tr);
+        });
+        
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        container.appendChild(table);
+        return container;
+    }
+
+
+    function renderResultsAndActions() {
+      resultsContainer.className = 'bloc bloc--resultats card';
+      resultsContainer.innerHTML = `<h2><i class="fa-solid fa-chart-bar"></i> Résultats</h2>`;
+
+      const kpiGrid = document.createElement('div');
+      kpiGrid.className = 'kpi-grid';
+      kpiGrid.id = 'kpi-grid-container';
+      resultsContainer.appendChild(kpiGrid);
+
+      const chartContainer = document.createElement('div');
+      chartContainer.className = 'chart-container';
+      chartContainer.innerHTML = '<canvas id="resultsChart"></canvas>';
+      resultsContainer.appendChild(chartContainer);
+      
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      actions.innerHTML = `
+        <button class="btn btn--ghost" id="btn-reset"><i class="fa-solid fa-undo"></i> Réinitialiser</button>
+        <button class="btn btn--save" id="btn-save"><i class="fa-solid fa-save"></i> Sauvegarder</button>
+      `;
+      resultsContainer.appendChild(actions);
+
+      const disclaimer = document.createElement('p');
+      disclaimer.className = 'disclaimer';
+      resultsContainer.appendChild(disclaimer);
+      updateCalculatedCells();
+
+      const pdfBranding = document.createElement('div');
+      pdfBranding.className = 'pdf-branding';
+      pdfBranding.innerHTML = `
+        <img class="print-visible" alt="Lamartine Conseil" src="data:image/jpeg;base64,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" />
+        <div class="disclaimer">
+          <strong>Lamartine Conseil</strong><br>
+          Le présent document a été élaboré sur la base des dispositions légales, règlementaires et des instructions administratives en vigueur à la date du 1er septembre 2025. Le présent document est destiné à fournir une simulation aussi précise et complète que possible. Cependant, celle-ci ne dispense pas l'utilisateur de la consultation d'un conseil et doit faire l'objet de toute vérification nécessaire avant application. La responsabilité de son auteur et du cabinet Lamartine Conseil ne pourrait en aucun cas être recherchée sur la base de son contenu.          Aucune donnée n’est par ailleurs stockée, tout reste sur le navigateur.<br>
+        </div>
+      `;
+      resultsContainer.appendChild(pdfBranding);
+
+      document.getElementById('btn-reset').addEventListener('click', () => location.reload());
+      document.getElementById('btn-save').addEventListener('click', () => window.print());
+      const note = document.createElement('p');
+      note.className = 'disclaimer';
+      resultsContainer.appendChild(note);
+    }
+
+    function getCellValue(a1) {
+      const { col, row } = a1ToRC(a1);
+      const cellValue = hf.getCellValue({ sheet: sheetId, row, col });
+      if (cellValue && typeof cellValue === 'object') {
+          if (cellValue.type === 'ERROR') return 0;
+          return cellValue.value;
+      }
+      return cellValue;
+    }
+
+    function updateCalculatedCells() {
+        const cells = document.querySelectorAll('.calculated-val');
+        cells.forEach(cell => {
+            const a1 = cell.id.split('-')[1];
+            if (!a1) return;
+            const value = getCellValue(a1);
+            if (a1.match(/70$/)) { cell.textContent = formatNumber(value); } 
+            else if (a1 === 'D22') { cell.textContent = formatNumber(value); }
+            else { cell.textContent = formatCurrency(value); }
+        });
+    }
+
+    function renderResultsKPIs() {
+      const container = document.getElementById('kpi-grid-container');
+      if (!container) return;
+      
+      const kpiIcons = {
+          "Prix de cession total": "fa-solid fa-tag",
+          "Montant brut (hors réinvestissement)": "fa-solid fa-money-bill-wave",
+          "Impôt payé (IR + PS)": "fa-solid fa-receipt",
+          "Montant net": "fa-solid fa-wallet",
+          "% Montant net": "fa-solid fa-chart-pie",
+          "Taux effectif d’imposition": "fa-solid fa-percentage"
+      };
+
+      container.innerHTML = '';
+      for (const result of RESULTS) {
+        const value = getCellValue(result.a1);
+        const kpi = document.createElement('div');
+        kpi.className = 'kpi';
+        const iconClass = kpiIcons[result.label] || "fa-solid fa-question";
+        kpi.innerHTML = `
+            <i class="${iconClass}"></i>
+            <div>
+                <div class="kpi__label">${result.label} :</div>
+                <div class="kpi__value">${(result.format === 'percent') ? formatPercent(value) : formatCurrency(value)}</div>
+            </div>
+        `;
+        container.appendChild(kpi);
+      }
+      renderOrUpdateChart();
+    }
+    
+    function renderOrUpdateChart() {
+        const ctx = document.getElementById('resultsChart').getContext('2d');
+        const impots = getCellValue('D77') || 0;
+        const net = getCellValue('D78') || 0;
+        
+        const style = getComputedStyle(document.documentElement);
+        const primaryColor = style.getPropertyValue('--accent-primary').trim();
+        const secondaryColor = style.getPropertyValue('--accent-secondary').trim();
+
+        const data = {
+            labels: ['Impôt payé (impôt sur le revenu et prélèvements sociaux)', 'Montant net'],
+            datasets: [{
+                data: [impots, net],
+                backgroundColor: [primaryColor, secondaryColor],
+                borderColor: 'var(--bg-card)',
+                borderWidth: 3,
+            }]
+        };
+
+        const options = {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: 'var(--text-secondary)',
+                        font: { size: 14 }
+                    }
+                },
+                tooltip: { enabled: false },
+                datalabels: {
+                    formatter: (value, context) => {
+                        if (value <= 0) return '';
+                        const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                        const percentage = total > 0 ? (value / total * 100).toFixed(1) + '%' : '0.0%';
+                        const amount = value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+                        return `${amount}\n(${percentage})`;
+                    },
+                    color: '#fff',
+                    textAlign: 'center',
+                    font: {
+                        weight: 'bold',
+                        size: 14,
+                    }
+                }
+            }
+        };
+
+        if (chartInstance) {
+            chartInstance.data = data;
+            chartInstance.update();
+        } else {
+            chartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: data,
+                options: options
+            });
+        }
+    }
+    
+    document.getElementById('timestamp').textContent = new Date().toLocaleString('fr-FR');
+
+    renderMainContent();
+    renderResultsAndActions();
+    renderResultsKPIs(); 
+    updateCalculatedCells(); 
+
+    window.renderResults = renderResultsKPIs;
+
+  } catch (error) {
+    console.error('Erreur lors du chargement du simulateur:', error);
+    document.body.innerHTML = `<div style="color:red; padding: 20px;"><b>Erreur critique:</b> ${error.message}.<br><pre>${error.stack}</pre></div>`;
+  }
+})();
+</script>
+
+<script id="apply-user-requests" defer>
+(function(){'use strict';
+  function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  onReady(function(){
+
+    try {
+      document.querySelectorAll('.hero__title').forEach(el=>{ el.textContent = "Simulateur Management package"; });
+      var note = Array.from(document.querySelectorAll('.hero__note, .hero p, .note, p')).find(p=>/note\s*importante/i.test(p.textContent||''));
+      if (note && !document.getElementById('mode-emploi-line')) {
+        var p = document.createElement('p'); p.id='mode-emploi-line'; p.className='hero__note';
+        p.innerHTML = "<b>Mode d’emploi :</b> " + "Mode d\u2019emploi : Entrez vos donn\u00e9es dans les cadres pr\u00e9vues \u00e0 cet effet en suivant les indications pour chacune des cases. Indiquer 0 si vous n'avez pas l'information";
+        note.insertAdjacentElement('afterend', p);
+      }
+    } catch(e) { console.warn('hero patch', e); }
+
+    try {
+      if (!document.getElementById('hypotheses-block')) {
+        var hero = document.querySelector('.hero, .bloc.hero, .page .hero__title')?.closest('section, div') || document.querySelector('main, .page, body');
+        var tmp = document.createElement('div'); tmp.innerHTML = "<section class=\"bloc card hypotheses-card\" id=\"hypotheses-block\">\n  <h2><i class=\"fa-solid fa-list-check\"></i> Hypoth\u00e8ses</h2>\n  <div class=\"disclaimer\" style=\"font-size:14px; line-height:1.5;\">\n    <p>• Ce simulateur vise la d\u00e9tention d\u2019actions ordinaires, d\u2019actions de pr\u00e9f\u00e9rence, d\u2019actions gratuites et de BSPCE. Les actions d\u00e9tenues dans un PEA ne sont pas int\u00e9gr\u00e9es \u00e0 ce simulateur.</p>\n    <p>• La simulation repose sur les modalit\u00e9s d\u2019acquisition et/ou de souscription suivantes : (i) les titres ont \u00e9t\u00e9 souscrits, acquis ou attribu\u00e9s 'en contrepartie' de fonctions de salari\u00e9s ou dirigeants exerc\u00e9es au sein de la soci\u00e9t\u00e9 \u00e9mettrice ou dans toute soci\u00e9t\u00e9 fille ou m\u00e8re de la soci\u00e9t\u00e9 \u00e9mettrice, le plan d\u2019AGA / BSPCE a \u00e9t\u00e9 \u00e9mis conform\u00e9ment aux dispositions du Code de Commerce et du Code g\u00e9n\u00e9ral des Imp\u00f4ts, (iii) les titres pr\u00e9sentent un risque en capital, le b\u00e9n\u00e9ficiaire travaille dans la soci\u00e9t\u00e9 depuis au moins 3 ans au jours de la cession (pour les BSPCE uniquement), (iv) les titres autres que ceux r\u00e9sultant de plan d\u2019AGA, de stock-options ou de BSPCE ont \u00e9t\u00e9 d\u00e9tenus pendant deux ans au moins et (v) Les titres n\u2019ont pas \u00e9t\u00e9 inscrits en PEA.</p>\n    <p>• Le r\u00e9gime fiscal applicable aux titres d\u00e9tenus via un PEA n\u2019est pas int\u00e9gr\u00e9 \u00e0 la simulation compte tenu de l\u2019incertitude du r\u00e9gime fiscal applicable \u00e0 la plus-value de cession.</p>\n    <p>• Cette simulation ne prend pas en compte les \u00e9ventuelles op\u00e9rations de haut de bilan r\u00e9alis\u00e9es pendant la dur\u00e9e de d\u00e9tention des titres.</p>\n    <p>• Cette simulation est bas\u00e9e sur la loi de finances pour 2025. Les r\u00e9sultats sont indicatifs et susceptibles d\u2019\u00e9voluer en fonction des commentaires administratifs notamment.</p>\n  </div>\n</section>";
+        hero.parentNode.insertBefore(tmp.firstElementChild, hero.nextSibling);
+      }
+    } catch(e) { console.warn('hypotheses', e); }
+
+    try {
+      var modHeader = Array.from(document.querySelectorAll('h2')).find(h=>/modalités\s*d[’']?acquisition/i.test(h.textContent||''));
+      if (modHeader) modHeader.closest('section')?.classList.add('is-hidden');
+      var style = document.getElementById('mpatch-hide-modalites');
+      if(!style) {
+        style = document.createElement('style'); style.id='mpatch-hide-modalites';
+        style.textContent = ".is-hidden{display:none !important;}";
+        document.head.appendChild(style);
+      }
+    } catch(e) { console.warn('modalites hide', e); }
+
+    try {
+      var hf = window.hf || window.HF || undefined;
+      var a1ToRC = window.a1ToRC || ((addr)=>{ var m = String(addr).match(/([A-Z]+)(\d+)/i); if(!m) return null; var col = 0; for (var i=0;i<m[1].length;i++) { col = col*26 + (m[1].toUpperCase().charCodeAt(i)-64); } return { row: parseInt(m[2],10)-1, col: col-1 }; });
+      if (hf && hf.getSheetId) {
+        var sid = hf.getSheetId('Données de calcul');
+        var pos = a1ToRC('D39');
+        if (sid!=null && pos) hf.setCellContents({ sheet: sid, row: pos.row, col: pos.col }, [['OUI']]);
+      }
+    } catch(e) { console.warn('HF D39 set failed (non-fatal)', e); }
+
+    try {
+      if (!document.getElementById('inst-section')) {
+        var inst = document.createElement('section'); inst.className='bloc card'; inst.id='inst-section';
+        inst.innerHTML = "<h2><i class='fa-solid fa-layer-group'></i> Instruments acquis ou souscrits</h2>";
+        var grid = document.createElement('div'); grid.className='checks-grid';
+        var items = [
+          ['AO','Actions ordinaires (AO)'],
+          ['ADP','Actions de préférence (ADP)'],
+          ['AGAO','Actions gratuites ordinaires (AGAO)'],
+          ['AGADP','Actions gratuites de préférence (AGADP)'],
+          ['BSPCE','BSPCE']
+        ];
+        var state = {AO:true,ADP:true,AGAO:true,AGADP:true,BSPCE:true};
+        function make(it){ var label=document.createElement('label'); label.className='check';
+          var cb=document.createElement('input'); cb.type='checkbox'; cb.checked=state[it[0]];
+          cb.addEventListener('change', function(){ state[it[0]]=cb.checked; apply(); });
+          var txt=document.createElement('span'); txt.textContent=it[1]; label.appendChild(cb); label.appendChild(txt); return label; }
+        items.forEach(it=>grid.appendChild(make(it))); inst.appendChild(grid);
+        var anchor = document.querySelector('.bloc--etat-foyer') || document.getElementById('hypotheses-block') || document.querySelector('.hero') || document.querySelector('main');
+        anchor.parentNode.insertBefore(inst, anchor.nextSibling);
+
+        function colIndexByHeaderText(){
+          var headRow = document.querySelector('.table .thead .tr'); if(!headRow) return null;
+          var cells = Array.from(headRow.children);
+          var map={};
+          cells.forEach((c,idx)=>{ var t=(c.textContent||'').trim();
+            if(/^AO \(hors PEA\)$/i.test(t) || /actions\s*ordinaires\s*\(hors\s*pea\)/i.test(t)) map['AO']=idx+1;
+            else if(/^ADP$/i.test(t) || /actions\s*de\s*préférence\s*\(adp\)/i.test(t)) map['ADP']=idx+1;
+            else if(/^AGAO$/i.test(t) || /actions\s*gratuites\s*ordinaires\s*\(agao\)/i.test(t)) map['AGAO']=idx+1;
+            else if(/^AGADP$/i.test(t) || /actions\s*gratuites\s*de\s*préférence\s*\(agadp\)/i.test(t)) map['AGADP']=idx+1;
+            else if(/^BSPCE$/i.test(t)) map['BSPCE']=idx+1;
+          });
+          return map;
+        }
+
+        function toggleColumn(idx, disabled){ if(!idx) return;
+          var headerRow = document.querySelector('.table .thead .tr');
+          var headCell = headerRow && headerRow.children[idx-1]; if(headCell) headCell.classList.toggle('col-disabled', disabled);
+          document.querySelectorAll('.table .tbody .tr').forEach(tr=>{ var c=tr.children[idx-1]; if(c) c.classList.toggle('col-disabled', disabled); });
+        }
+
+        function apply(){ var map = colIndexByHeaderText();
+          ['AO','ADP','AGAO','AGADP','BSPCE'].forEach(k=>{ toggleColumn(map && map[k], !state[k]); });
+        }
+        apply();
+      }
+    } catch(e) { console.warn('instruments', e); }
+
+    try {
+      var hrow = document.querySelector('.table .thead .tr');
+      if (hrow) {
+        Array.from(hrow.children).forEach(function(cell){
+          var t=(cell.textContent||'').trim();
+          if(/AO \(hors PEA\)/.test(t)) cell.textContent = "Actions ordinaires (hors PEA)";
+          if(/^ADP$/.test(t)) cell.textContent = "Actions de préférence (ADP)";
+          if(/^AGAO$/.test(t)) cell.textContent = "Actions gratuites ordinaires (AGAO)";
+          if(/^AGADP$/.test(t)) cell.textContent = "Actions gratuites de préférence (AGADP)";
+        });
+      }
+    } catch(e) { console.warn('rename headers', e); }
+
+    try {
+      Array.from(document.querySelectorAll('.td.td--subsection')).forEach(function(el){
+        if(/augmentation\s*de\s*capital\s*pendant\s*l[’']op[ée]ration/i.test(el.textContent||'')) el.textContent = 'Titres';
+      });
+    } catch(e) { console.warn('rename subsection', e); }
+
+    try {
+      var hiddenCount=0;
+      document.querySelectorAll('.table .tbody .tr').forEach(function(tr){
+        var n = parseInt(tr.getAttribute('data-row')||tr.getAttribute('aria-rowindex')||'',10);
+        if([54,55,56,57].includes(n)) { tr.style.display='none'; hiddenCount++; }
+      });
+      if(!hiddenCount) console.log('Rows 54-57 not tagged; skipping hide to avoid regression.');
+    } catch(e) { console.warn('hide rows 54-57 skipped', e); }
+
+    try {
+      var target = document.querySelector('#results, .results, .results-card, .bloc.results') || document.body;
+      if (!document.getElementById('lc-disclaimer')) {
+        var wrap = document.createElement('div'); wrap.id='lc-disclaimer'; wrap.style.marginTop='12px';
+        target.appendChild(wrap);
+      }
+    } catch(e) { console.warn('disclaimer', e); }
+
+  });
+})();
+</script>
+
+
+
+<script id="ui-fixes-2025-09-04">
+(function(){
+  function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  onReady(function(){
+    ['header-visibility-fix-2025-09-03'].forEach(id=>{ var el=document.getElementById(id); if(el) el.remove(); });
+
+    document.title = 'Simulateur Management package';
+    document.querySelectorAll('.hero__title').forEach(el=>{ el.textContent = 'Simulateur Management package'; });
+    var sub = document.querySelector('.hero__subtitle');
+    if(sub) sub.textContent = "calculer l’impact fiscal de la réforme du régime des management packages introduite par la Loi de Finances pour 2025";
+
+    document.querySelectorAll('.table').forEach(t=>{
+      t.style.overflowX = 'auto';
+      t.style.webkitOverflowScrolling = 'touch';
+      t.style.touchAction = 'pan-x pan-y';
+    });
+
+    function norm(s){
+      return (s||'').toString().normalize('NFD').replace(/\\p{Diacritic}/gu,'').toLowerCase().trim();
+    }
+
+    function applyRowFixes(){
+      const rows = Array.from(document.querySelectorAll('.table .tbody .tr'));
+      if(!rows.length) return;
+
+      let anchor = null;
+      for (const tr of rows) {
+        const td = tr.querySelector('.td--stub');
+        if(!td) continue;
+        const txt = norm(td.textContent);
+        if(/augmentation de capital pendant l.?operation/.test(txt)) { anchor = tr; td.textContent = 'Titres'; break; }
+      }
+
+      if(anchor){
+        let el = anchor.nextElementSibling;
+        const stopAt = /calcul du multiple/;
+        while(el){
+          const lab = el.querySelector('.td--stub');
+          if(lab){
+            const labtxt = norm(lab.textContent);
+            if(stopAt.test(labtxt)) break;
+            if(/valeur reelle de la societe emettrice a la date de la cession/.test(labtxt) ||
+               /montant des dettes.*date de la cession/.test(labtxt)) {
+              el.style.display = 'none';
+            }
+          }
+          el = el.nextElementSibling;
+        }
+      }
+    }
+
+    applyRowFixes();
+    new MutationObserver(applyRowFixes).observe(document.body, {childList:true,subtree:true});
+
+    const results = document.getElementById('results-card');
+    if(results && !results.querySelector('.pdf-branding')){ 
+      const wrap = document.createElement('div');
+      wrap.className = 'pdf-branding';
+      wrap.innerHTML = `
+        <img class="print-visible" alt="Logo" src="data:image/jpeg;base64,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" />
+        <p class="disclaimer">
+          <strong>Disclaimer&nbsp;:</strong>
+          Le présent document a été élaboré sur la base des dispositions légales, règlementaires et des instructions administratives en vigueur
+          à la date du 1er septembre 2025. Il fournit une simulation aussi précise et complète que possible&nbsp;; toutefois, celle-ci ne dispense pas
+          l'utilisateur de la consultation d'un conseil et doit faire l'objet de toute vérification nécessaire avant application.
+          La responsabilité de son auteur et du cabinet Lamartine Conseil ne saurait être recherchée sur la base de son contenu.
+          <em>Aucune donnée n’est stockée&nbsp;: tout reste sur le navigateur.</em>
+        </p>`;
+      results.appendChild(wrap);
+    }
+  });
+})();
+</script>
+
+
+</body>
+</html>
